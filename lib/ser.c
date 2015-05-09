@@ -92,7 +92,7 @@ ser_close(int *fd)
     int retval = 0;
 
     retval = tcsetattr(*fd, TCSANOW, &newtio);
-    if(retval < 0)
+    if (retval < 0)
         outlog("tcsetattr error");
 
     retval = close(*fd);
@@ -120,7 +120,7 @@ ser_config(const int fd)
     (void)memset(&newtio, 0x00, sizeof(struct termios));
 
     retval = tcgetattr(fd, &oldtio);
-    if(retval < 0) {
+    if (retval < 0) {
         outlog("tcgetattr error");
         return SER_NG;
     }
@@ -129,21 +129,21 @@ ser_config(const int fd)
 
     newtio.c_iflag = IGNPAR;
     newtio.c_oflag = 0;
-    newtio.c_cflag = B9600 | CS8 | CLOCAL | CREAD;
+    newtio.c_cflag = B9600 | CS8 | CLOCAL | CREAD; // | CRTSCTS;
     newtio.c_lflag = 0;
 
     newtio.c_cc[VTIME] = 0;
-    newtio.c_cc[VMIN] = 1;
+    newtio.c_cc[VMIN] = 31;
 
     cfsetispeed(&newtio, B9600);
     cfsetospeed(&newtio, B9600);
 
-    retval = tcflush(fd, TCIFLUSH);
-    if (retval < 0)
-        outlog("tcflash error");
+    /* retval = tcflush(fd, TCIFLUSH); */
+    /* if (retval < 0) */
+    /*     outlog("tcflash error"); */
 
     retval = tcsetattr(fd, TCSANOW, &newtio);
-    if(retval < 0) {
+    if (retval < 0) {
         outlog("tcsetattr error");
         return SER_NG;
     }
@@ -174,10 +174,13 @@ ser_write(const int fd, const void *sdata, size_t *length)
         len = write(fd, sdata, *length);
         dbglog("write=%zd, ptr=%p, left=%zu", len, ptr, left);
         if (len <= 0) {
-            if (errno == EINTR)
+            if (errno == EINTR) {
                 len = 0;
-            else
+                outlog("len=%zd, left=%zu, *length=%zu", len, left, *length);
+                break;
+            } else {
                 goto error;
+            }
         }
         left -= len;
         ptr += len;
@@ -218,10 +221,12 @@ ser_read(const int fd, void *rdata, size_t *length)
         len = read(fd, ptr, left);
         dbglog("read=%zd, ptr=%p, left=%zu", len, ptr, left);
         if (len < 0) { /* エラー */
-            if (errno == EINTR)
+            if (errno == EINTR) {
                 len = 0;
-            else
+                break;
+            } else {
                 goto error;
+            }
         } else if (len == 0) { /* 接続先がシャットダウンした */
             outlog("Not connected.");
             goto error;
@@ -347,12 +352,14 @@ ser_read_to2(const int fd, void *rdata, size_t *length)
         len = read(fd, ptr, left);
         dbglog("read=%zd, ptr=%p, left=%zu", len, ptr, left);
         if (len < 0) { /* エラー */
-            if (errno == EINTR)
+            if (errno == EINTR) {
                 len = 0;
-            else if ((errno == EAGAIN) || (errno == EWOULDBLOCK))
+                break;
+            } else if ((errno == EAGAIN) || (errno == EWOULDBLOCK)) {
                 goto timeout;
-            else
+            } else {
                 goto error;
+            }
         } else if (len == 0) { /* 接続先がシャットダウンした */
             outlog("Not connected.");
             goto error;

@@ -23,9 +23,10 @@
  */
 
 #include <stdio.h>  /* fprintf */
-#include <stdlib.h> /* EXIT_SUCCESS */
+#include <stdlib.h> /* strtol EXIT_SUCCESS */
 #include <string.h> /* memset */
 #include <getopt.h> /* getopt_long */
+#include <errno.h>  /* errno */
 
 #include "log.h"
 #include "version.h"
@@ -38,6 +39,7 @@ static struct option longopts[] = {
     { "send",    no_argument,       NULL, 's' },
     { "recv",    no_argument,       NULL, 'r' },
     { "error",   required_argument, NULL, 'e' },
+    { "count",   required_argument, NULL, 'c' },
     { "timeout", no_argument,       NULL, 'T' },
     { "device",  required_argument, NULL, 'D' },
     { "help",    no_argument,       NULL, 'h' },
@@ -46,7 +48,7 @@ static struct option longopts[] = {
 };
 
 /** オプション情報文字列(ショート) */
-static const char *shortopts = "sre:TD:hV";
+static const char *shortopts = "sre:c:TD:hV";
 
 /** タイムアウト値 */
 static struct timespec timeout;
@@ -56,6 +58,8 @@ char *device = NULL;
 
 /** 関数 */
 int (*func)(int);
+
+long count = 0;
 
 /** ヘルプの表示 */
 static void print_help(const char *progname);
@@ -77,6 +81,8 @@ parse_args(int argc, char *argv[])
 {
     int opt = 0;
     unsigned char e = 0x00;
+    char *endptr = NULL;
+    const int base = 10;
 
     func = recv_send_loop;
 
@@ -106,6 +112,12 @@ parse_args(int argc, char *argv[])
                 exit(EXIT_FAILURE);
             }
             break;
+        case 'c': /* 回数 */
+           count = strtol(optarg, &endptr, base);
+            if ((errno != 0) || (*endptr != '\0')) {
+                outlog("endptr=%c", *endptr);
+                exit(EXIT_FAILURE);
+            }
         case 'T': /* タイムアウト */
             (void)memset(&timeout, 0x00, sizeof(struct timespec));
             timeout.tv_sec = 1;

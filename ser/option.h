@@ -27,6 +27,7 @@
 
 extern char *device;
 extern int (*func)(int);
+extern long count;
 
 /** オプション引数 */
 void parse_args(int argc, char *argv[]);

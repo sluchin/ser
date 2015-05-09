@@ -82,7 +82,7 @@ recv_send_loop(const int fd)
 
         (void)send_data(fd, send_buf, sizeof(send_buf));
 
-    } while (!sig_handled);
+    } while (!sig_handled && (!count || !(--count <= 0)));
 
     return EXIT_SUCCESS;
 }
@@ -108,7 +108,7 @@ recv_send_loop2(const int fd)
         else
             (void)send_data(fd, send_buf, sizeof(send_buf) - 1);
 
-    } while (!sig_handled);
+    } while (!sig_handled && (!count || !(--count <= 0)));
 
     return EXIT_SUCCESS;
 }
@@ -134,7 +134,7 @@ recv_send_loop3(const int fd)
         else
             (void)send_data(fd, send_buf2, sizeof(send_buf2));
 
-    } while (!sig_handled);
+    } while (!sig_handled && (!count || !(--count <= 0)));
 
     return EXIT_SUCCESS;
 }
@@ -160,7 +160,7 @@ recv_send_loop4(const int fd)
         else
             (void)send_data(fd, send_buf3, sizeof(send_buf3));
 
-    } while (!sig_handled);
+    } while (!sig_handled && (!count || !(--count <= 0)));
 
     return EXIT_SUCCESS;
 }
@@ -179,7 +179,7 @@ send_loop(const int fd)
     do {
         (void)send_data(fd, send_buf, sizeof(send_buf));
 
-    } while (!sig_handled);
+    } while (!sig_handled && (!count || !(--count <= 0)));
 
     return EXIT_SUCCESS;
 }
@@ -198,7 +198,7 @@ recv_loop(const int fd)
     do {
         (void)recv_data(fd, sizeof(send_buf));
 
-    } while (!sig_handled);
+    } while (!sig_handled && (!count || !(--count <= 0)));
 
     return EXIT_SUCCESS;
 }
