@@ -75,7 +75,7 @@ strip:
 
 .PHONY: clean
 clean:
-	@$(RM) $(EXEC) $(OBJ)
+	@$(RM) $(EXEC) $(OBJ) $(LIB)
 
 .PHONY: romfs
 romfs:

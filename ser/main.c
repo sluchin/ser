@@ -65,9 +65,9 @@ main(int argc, char *argv[])
     if (retval < 0)
         return EXIT_FAILURE;
 
-    retval = tcflush(fd, TCIOFLUSH);
-    if (retval < 0)
-        outlog("tcflash error");
+    /* retval = tcflush(fd, TCIOFLUSH); */
+    /* if (retval < 0) */
+    /*     outlog("tcflash error"); */
 
     /* ループ */
     retval = func(fd);
@@ -102,12 +102,12 @@ set_sig_handler(void)
     dbglog("sigmask=0x%x", sigmask);
 
     /* シグナル補足 */
-    if (sigaction(SIGINT, (struct sigaction *)NULL, &sa) < 0)
-        outlog("sigaction=%p, SIGINT", &sa);
-    sa.sa_handler = sig_handler;
-    sa.sa_mask = sigmask;
-    if (sigaction(SIGINT, &sa, (struct sigaction *)NULL) < 0)
-        outlog("sigaction=%p, SIGINT", &sa);
+    /* if (sigaction(SIGINT, (struct sigaction *)NULL, &sa) < 0) */
+    /*     outlog("sigaction=%p, SIGINT", &sa); */
+    /* sa.sa_handler = sig_handler; */
+    /* sa.sa_mask = sigmask; */
+    /* if (sigaction(SIGINT, &sa, (struct sigaction *)NULL) < 0) */
+    /*     outlog("sigaction=%p, SIGINT", &sa); */
 
     if (sigaction(SIGTERM, (struct sigaction *)NULL, &sa) < 0)
         outlog("sigaction=%p, SIGTERM", &sa);
