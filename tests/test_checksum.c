@@ -34,20 +34,20 @@ void
 test_001_checksum(void)
 {
     size_t size = sizeof(data);
-    unsigned char checksum = 0;
-    checksum = add_checksum(data, size);
-    CU_ASSERT(checksum == 0x01);
+    unsigned char cksum = 0;
+    cksum = add_checksum(data, size);
+    CU_ASSERT(cksum == 0x01);
     CU_ASSERT(data[size - 1] == 0x01);
-    checksum = check_checksum(data, size);
-    CU_ASSERT(checksum == 0x00);
+    cksum = checksum(data, size);
+    CU_ASSERT(cksum == 0x00);
 }
 
 void
 test_002_checksum(void)
 {
     size_t size = sizeof(data);
-    unsigned char checksum = 0;
+    unsigned char cksum = 0;
     data[size - 1] = 0x02;
-    checksum = check_checksum(data, size);
-    CU_ASSERT(checksum != 0x00);
+    cksum = checksum(data, size);
+    CU_ASSERT(cksum != 0x00);
 }

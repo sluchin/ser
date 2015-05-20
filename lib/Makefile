@@ -13,8 +13,8 @@ ARM = arm-linux-gnueabi-gcc
 INSTALL = install -c
 
 INCLUDES = -I$(srcdir)
-CFLAGS = -g -Wall -O2 -DNDEBUG
-DFLAGS = -g -Wall -O2 -D_DEBUG
+CFLAGS = -g -Wall -O2 -DNDEBUG -D_USE_SELECT
+DFLAGS = -g -Wall -O2 -D_DEBUG -D_USE_SELECT
 LDFLAGS =
 LIB = libser.a
 SRC = log.c ser.c

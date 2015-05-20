@@ -34,8 +34,11 @@
 #include "log.h"
 #include "ser.h"
 
-#define SER_FLAGS (O_RDWR | O_NOCTTY)
-//#define SER_FLAGS (O_RDWR | O_NOCTTY | O_NONBLOCK)
+#ifdef _USE_SELECT
+#  define SER_FLAGS (O_RDWR | O_NOCTTY)
+#else
+#  define SER_FLAGS (O_RDWR | O_NOCTTY | O_NONBLOCK)
+#endif /* _USE_SELECT */
 
 static struct termios oldtio;
 static struct termios newtio;
@@ -46,8 +49,8 @@ static sigset_t get_sigmask(void);
 /**
  * オープン
  *
- * @param[in] dev デバイス
- * @param[in] fd  ファイルディスクリプタ
+ * @param[in]  dev デバイス
+ * @param[out] fd  ファイルディスクリプタ
  * @retval SER_NG エラー
  */
 int
@@ -65,13 +68,11 @@ ser_open(const char *dev, int *fd)
         }
     }
 
-    retval = open(dev, SER_FLAGS);
-    if (retval < 0) {
+    *fd = open(dev, SER_FLAGS);
+    if (*fd < 0) {
         outlog("open error");
         return SER_NG;
     }
-
-    *fd = retval;
 
     retval = ser_config(*fd);
     if (retval < 0)
@@ -83,7 +84,7 @@ ser_open(const char *dev, int *fd)
 /**
  * クローズ
  *
- * @param[in] fd ファイルディスクリプタ
+ * @param[in,out] fd ファイルディスクリプタ
  * @retval SER_NG エラー
  */
 int
@@ -91,7 +92,7 @@ ser_close(int *fd)
 {
     int retval = 0;
 
-    retval = tcsetattr(*fd, TCSANOW, &newtio);
+    retval = tcsetattr(*fd, TCSANOW, &oldtio);
     if (retval < 0)
         outlog("tcsetattr error");
 
@@ -133,14 +134,14 @@ ser_config(const int fd)
     newtio.c_lflag = 0;
 
     newtio.c_cc[VTIME] = 0;
-    newtio.c_cc[VMIN] = 31;
+    newtio.c_cc[VMIN] = 1;
 
     cfsetispeed(&newtio, B9600);
     cfsetospeed(&newtio, B9600);
 
-    /* retval = tcflush(fd, TCIFLUSH); */
-    /* if (retval < 0) */
-    /*     outlog("tcflash error"); */
+    retval = tcflush(fd, TCIFLUSH);
+    if (retval < 0)
+        outlog("tcflash error");
 
     retval = tcsetattr(fd, TCSANOW, &newtio);
     if (retval < 0) {
@@ -155,7 +156,7 @@ ser_config(const int fd)
  * データ送信
  *
  * @param[in]     fd     ファイルディスクリプタ
- * @param[in]     sdata  データ
+ * @param[in]     sdata  送信データ
  * @param[in,out] length データ長
  * @retval SER_NG エラー
  */
@@ -201,7 +202,7 @@ error:
  * データ受信
  *
  * @param[in]     fd     ファイルディスクリプタ
- * @param[out]    rdata  データ
+ * @param[out]    rdata  受信データ
  * @param[in,out] length データ長
  * @retval SER_TO タイムアウト
  * @retval SER_NG エラー
@@ -251,12 +252,13 @@ error:
  * データ受信(タイムアウトあり)
  *
  * @param[in]     fd     ファイルディスクリプタ
- * @param[out]    rdata  データ
+ * @param[out]    rdata  受信データ
  * @param[in,out] length データ長
  * @param[in]     ts     タイムアウト値
  * @retval SER_TO タイムアウト
  * @retval SER_NG エラー
  */
+#ifdef _USE_SELECT
 int
 ser_read_to(const int fd, void *rdata, size_t *length, struct timespec *ts)
 {
@@ -304,9 +306,8 @@ ser_read_to(const int fd, void *rdata, size_t *length, struct timespec *ts)
                     ptr += len;
                 }
             }
-        } else {
+        } else { /* タイムアウト */
             outlog("timeout");
-            // タイムアウト
             goto timeout;
         }
     }
@@ -327,16 +328,7 @@ error:
            len, fd, ptr, left, *length);
     return SER_NG;
 }
-
-/**
- * データ受信(タイムアウトあり)
- *
- * @param[in]     fd     ファイルディスクリプタ
- * @param[out]    rdata  データ
- * @param[in,out] length データ長
- * @retval SER_TO タイムアウト
- * @retval SER_NG エラー
- */
+#else
 int
 ser_read_to2(const int fd, void *rdata, size_t *length)
 {
@@ -356,6 +348,7 @@ ser_read_to2(const int fd, void *rdata, size_t *length)
                 len = 0;
                 break;
             } else if ((errno == EAGAIN) || (errno == EWOULDBLOCK)) {
+                /* ノンブロッキングタイムアウト */
                 goto timeout;
             } else {
                 goto error;
@@ -385,6 +378,7 @@ error:
            len, fd, ptr, left, *length);
     return SER_NG;
 }
+#endif /* _USE_SELECT */
 
 /**
  * シグナルマスク取得

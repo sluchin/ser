@@ -72,17 +72,17 @@ send_data(const int fd, const unsigned char *buf, const size_t size)
 /**
  * 受信処理
  *
- * @param[in] fd   ファイルディスクリプタ
- * @param[in] size サイズ
+ * @param[in]  fd   ファイルディスクリプタ
+ * @param[out] rbuf バッファ
+ * @param[in]  size サイズ
  * @return EXIT_FAILURE エラー
  */
 int
-recv_data(const int fd, const size_t size)
+recv_data(const int fd, unsigned char *rbuf, const size_t size)
 {
     int retval = 0;    /* 戻り値 */
     size_t length = 0; /* 受信する長さ*/
     int pos = 0;
-    unsigned char recv_buf[size];
 
     dbglog("start");
 
@@ -90,24 +90,22 @@ recv_data(const int fd, const size_t size)
 
     do {
         dbglog("ser_read: pos=%d, length=%zu", pos, length);
-        retval = ser_read_to(fd, (unsigned char *)(recv_buf + pos), &length, ptimeout);
+        retval = ser_read_to(fd, (unsigned char *)(rbuf + pos), &length, ptimeout);
         if (retval < 0)
             break;
-        dbgdump(recv_buf, length + pos, "read: length=%zu", length + pos);
+        dbgdump(rbuf, length + pos, "read: length=%zu", length + pos);
 
-        if (recv_buf[0] == CODE_HEADER &&
-            recv_buf[sizeof(recv_buf) - 1] == CODE_FOOTER) {
+        if (rbuf[0] == CODE_HEADER &&
+            rbuf[sizeof(rbuf) - 1] == CODE_FOOTER) {
             dbglog("checksum");
             // チェックサム
-            retval = check_checksum(recv_buf, sizeof(recv_buf));
-            if (retval) {
-                outlog("checksum error");
-                return EXIT_FAILURE;
-            }
-            break;
+            if (!checksum(rbuf, sizeof(rbuf)))
+                break;
+            outlog("checksum error");
+            return EXIT_FAILURE;
         } else { // ヘッダを検索
             dbglog("search_header");
-            if (search_header(recv_buf, sizeof(recv_buf), &pos, &length))
+            if (search_header(rbuf, sizeof(rbuf), &pos, &length))
                 continue;
             outlog("search error");
             return EXIT_FAILURE;

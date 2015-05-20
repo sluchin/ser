@@ -12,7 +12,8 @@
  * the Free Software Foundation; either version 2 of the License, or
  * (at your option) any later version.
  *
- * This program is distributed in the hope that it will be useful, * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
  *
@@ -65,9 +66,9 @@ main(int argc, char *argv[])
     if (retval < 0)
         return EXIT_FAILURE;
 
-    /* retval = tcflush(fd, TCIOFLUSH); */
-    /* if (retval < 0) */
-    /*     outlog("tcflash error"); */
+    retval = tcflush(fd, TCIOFLUSH);
+    if (retval < 0)
+        outlog("tcflash error");
 
     /* ループ */
     retval = func(fd);
@@ -102,12 +103,12 @@ set_sig_handler(void)
     dbglog("sigmask=0x%x", sigmask);
 
     /* シグナル補足 */
-    /* if (sigaction(SIGINT, (struct sigaction *)NULL, &sa) < 0) */
-    /*     outlog("sigaction=%p, SIGINT", &sa); */
-    /* sa.sa_handler = sig_handler; */
-    /* sa.sa_mask = sigmask; */
-    /* if (sigaction(SIGINT, &sa, (struct sigaction *)NULL) < 0) */
-    /*     outlog("sigaction=%p, SIGINT", &sa); */
+    if (sigaction(SIGINT, (struct sigaction *)NULL, &sa) < 0)
+        outlog("sigaction=%p, SIGINT", &sa);
+    sa.sa_handler = sig_handler;
+    sa.sa_mask = sigmask;
+    if (sigaction(SIGINT, &sa, (struct sigaction *)NULL) < 0)
+        outlog("sigaction=%p, SIGINT", &sa);
 
     if (sigaction(SIGTERM, (struct sigaction *)NULL, &sa) < 0)
         outlog("sigaction=%p, SIGTERM", &sa);
