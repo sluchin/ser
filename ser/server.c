@@ -30,8 +30,12 @@
 #include "server.h"
 #include "option.h"
 
+#define RECV_SIZE sizeof(send_buf)
+
 /*** シグナル */
 volatile sig_atomic_t sig_handled = 0;
+/*** 送受信回数 */
+static int counter = 0;
 
 static const unsigned char send_buf[] =
 {
@@ -66,6 +70,8 @@ static const unsigned char send_buf3[] =
     0x50, 0x0d
 };
 
+static unsigned char recv_buf[RECV_SIZE];
+
 /**
  * 受信送信ループ処理
  *
@@ -78,7 +84,7 @@ recv_send_loop(const int fd)
     dbglog("start");
 
     do {
-        (void)recv_data(fd, sizeof(send_buf));
+        (void)recv_data(fd, recv_buf, sizeof(recv_buf));
 
         (void)send_data(fd, send_buf, sizeof(send_buf));
 
@@ -96,12 +102,10 @@ recv_send_loop(const int fd)
 int
 recv_send_loop2(const int fd)
 {
-    static int counter = 0;
-
     dbglog("start");
 
     do {
-        (void)recv_data(fd, sizeof(send_buf));
+        (void)recv_data(fd, recv_buf, sizeof(recv_buf));
 
         if (++counter%2)
             (void)send_data(fd, send_buf, sizeof(send_buf));
@@ -122,12 +126,10 @@ recv_send_loop2(const int fd)
 int
 recv_send_loop3(const int fd)
 {
-    static int counter = 0;
-
     dbglog("start");
 
     do {
-        (void)recv_data(fd, sizeof(send_buf));
+        (void)recv_data(fd, recv_buf, sizeof(recv_buf));
 
         if (++counter%2)
             (void)send_data(fd, send_buf, sizeof(send_buf));
@@ -148,12 +150,10 @@ recv_send_loop3(const int fd)
 int
 recv_send_loop4(const int fd)
 {
-    static int counter = 0;
-
     dbglog("start");
 
     do {
-        (void)recv_data(fd, sizeof(send_buf));
+        (void)recv_data(fd, recv_buf, sizeof(recv_buf));
 
         if (++counter%2)
             (void)send_data(fd, send_buf, sizeof(send_buf));
@@ -196,7 +196,7 @@ recv_loop(const int fd)
     dbglog("start");
 
     do {
-        (void)recv_data(fd, sizeof(send_buf));
+        (void)recv_data(fd, recv_buf, sizeof(recv_buf));
 
     } while (!sig_handled && (!count || !(--count <= 0)));
 

@@ -30,6 +30,6 @@
 extern struct timespec *ptimeout;
 
 int send_data(const int fd, const unsigned char *buf, const size_t size);
-int recv_data(const int fd, const size_t size);
+int recv_data(const int fd, unsigned char *rbuf, const size_t size);
 
 #endif
