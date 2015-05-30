@@ -51,6 +51,7 @@ int
 main(int argc, char *argv[])
 {
     int retval = 0;
+    char *device = NULL;
 
     dbglog("start");
 
@@ -62,6 +63,7 @@ main(int argc, char *argv[])
     /* オプション引数 */
     parse_args(argc, argv);
 
+    device = get_device();
     retval = ser_open(device, &fd);
     if (retval < 0)
         return EXIT_FAILURE;
@@ -71,7 +73,7 @@ main(int argc, char *argv[])
         outlog("tcflash error");
 
     /* ループ */
-    retval = func(fd);
+    retval = callback(fd);
     if (retval < 0)
         exit(EXIT_FAILURE);
 

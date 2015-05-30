@@ -37,8 +37,8 @@
 #define CODE_HEADER 0x55
 #define CODE_FOOTER 0x0d
 
-struct timespec *ptimeout = NULL;
 static size_t max = 0;
+static struct timespec timeout;
 
 static bool search_header(unsigned char *buf, size_t size,
                           int *pos, size_t *length);
@@ -90,7 +90,7 @@ recv_data(const int fd, unsigned char *rbuf, const size_t size)
 
     do {
         dbglog("ser_read: pos=%d, length=%zu", pos, length);
-        retval = ser_read_to(fd, (unsigned char *)(rbuf + pos), &length, ptimeout);
+        retval = ser_read_to(fd, (unsigned char *)(rbuf + pos), &length, &timeout);
         if (retval < 0)
             break;
         dbgdump(rbuf, length + pos, "read: length=%zu", length + pos);
@@ -146,4 +146,16 @@ static bool search_header(unsigned char *buf, size_t size,
     *pos = 0;
 
     return false;
+}
+
+/**
+ * タイムアウト値設定
+ *
+ * @param[in]  timeout タイムアウト値
+ * @return なし
+ */
+void set_timeout(struct timespec *ts)
+{
+    timeout.tv_sec = ts->tv_sec;
+    timeout.tv_nsec = ts->tv_nsec;
 }
