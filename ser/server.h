@@ -27,12 +27,18 @@
 
 #include <signal.h>  /* sig_atomic_t */
 
+int recv_send_from_file(const int fd);
 int recv_send_loop(const int fd);
 int recv_send_loop2(const int fd);
 int recv_send_loop3(const int fd);
 int recv_send_loop4(const int fd);
 int send_loop(const int fd);
 int recv_loop(const int fd);
+void set_filename(char **file);
+void set_file_count(int count);
+void set_loop_count(int count);
+void set_callback(void *callback);
+int callback(int fd);
 
 /*** シグナル */
 extern volatile sig_atomic_t sig_handled;

@@ -35,11 +35,6 @@ UCLINUX_BUILD_USER = 1
 include $(ROOTDIR)/.config
 LIBCDIR = $(CONFIG_LIBCDIR)
 include $(ROOTDIR)/config.arch
-
-UCLINUX_BUILD_USER = 1
-include $(ROOTDIR)/.config
-LIBCDIR = $(CONFIG_LIBCDIR)
-include $(ROOTDIR)/config.arch
 endif
 
 .SUFFIXES: .c .o
@@ -52,7 +47,7 @@ $(EXEC): $(OBJ)
 	$(CC) $(LDFLAGS) -o $@ $^ $(LIB)
 
 .c.o:
-	$(CC) $(INCLUDES) $(CFLAGS) -c $(CFLAGS) $<
+	$(CC) $(INCLUDES) $(CFLAGS) -c $<
 
 $(OBJ) : data.h server.h option.h checksum.h Makefile
 

@@ -50,16 +50,8 @@ static struct option longopts[] = {
 /** オプション情報文字列(ショート) */
 static const char *shortopts = "sre:c:TD:hV";
 
-/** タイムアウト値 */
-static struct timespec timeout;
-
 /** デバイス */
-char *device = NULL;
-
-/** 関数 */
-int (*func)(int);
-
-long count = 0;
+static char *device = NULL;
 
 /** ヘルプの表示 */
 static void print_help(const char *progname);
@@ -83,29 +75,33 @@ parse_args(int argc, char *argv[])
     unsigned char e = 0x00;
     char *endptr = NULL;
     const int base = 10;
+    bool r_flag = false;
+    struct timespec timeout;
+    long count = 0;
 
-    func = recv_send_loop;
+    set_callback(recv_send_loop);
 
     while ((opt = getopt_long(argc, argv, shortopts, longopts, NULL)) != EOF) {
         dbglog("opt=%c, optarg=%s", opt, optarg);
         switch (opt) {
         case 's': /* 送信 */
-            func = send_loop;
+            set_callback(send_loop);
             break;
         case 'r': /* 受信 */
-            func = recv_loop;
+            set_callback(recv_loop);
+            r_flag = true;
             break;
         case 'e': /* エラー系送受信 */
             (void)memcpy(&e, optarg, 1);
             switch (e) {
             case '1':
-                func = recv_send_loop2;
+                set_callback(recv_send_loop2);
                 break;
             case '2':
-                func = recv_send_loop3;
+                set_callback(recv_send_loop3);
                 break;
             case '3':
-                func = recv_send_loop4;
+                set_callback(recv_send_loop4);
                 break;
             default:
                 print_help(get_progname());
@@ -113,16 +109,17 @@ parse_args(int argc, char *argv[])
             }
             break;
         case 'c': /* 回数 */
-           count = strtol(optarg, &endptr, base);
+            count = strtol(optarg, &endptr, base);
             if ((errno != 0) || (*endptr != '\0')) {
                 outlog("endptr=%c", *endptr);
                 exit(EXIT_FAILURE);
             }
+            set_loop_count(count);
         case 'T': /* タイムアウト */
             (void)memset(&timeout, 0x00, sizeof(struct timespec));
             timeout.tv_sec = 1;
             timeout.tv_nsec = 0;
-            ptimeout = &timeout;
+            set_timeout(&timeout);
             break;
         case 'D': /* デバイス指定 */
             device = optarg;
@@ -143,10 +140,13 @@ parse_args(int argc, char *argv[])
         }
     }
     if (optind < argc) {
-        (void)printf("non-option ARGV-elements: ");
-        while (optind < argc)
-            (void)printf("%s ", argv[optind++]);
-        (void)printf("\n");
+        if (!r_flag) {
+            set_file_count(argc - optind);
+            set_filename(&argv[optind]);
+            set_callback(recv_send_from_file);
+            dbglog("fcount=%d filename=%p",
+                   argc - optind, &argv[optind]);
+        }
     }
 }
 
@@ -160,7 +160,7 @@ parse_args(int argc, char *argv[])
 static void
 print_help(const char *progname)
 {
-    (void)fprintf(stderr, "Usage: %s [OPTION]...\n", progname);
+    (void)fprintf(stderr, "Usage: %s [option]... [filename]...\n", progname);
     (void)fprintf(stderr, "  -s, --send             %s",
                   "send serial\n");
     (void)fprintf(stderr, "  -r, --recv             %s",
@@ -204,4 +204,14 @@ parse_error(const int c, const char *msg)
     if (msg)
         (void)fprintf(stderr, "getopt[%d]: %s\n", c, msg);
     (void)fprintf(stderr, "Try `getopt --help' for more information\n");
+}
+
+/**
+ * デバイス名取得
+ *
+ * @return デバイス名
+ */
+char *get_device(void)
+{
+    return device;
 }
