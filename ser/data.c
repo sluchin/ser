@@ -34,9 +34,6 @@
 #include "data.h"
 #include "server.h"
 
-#define CODE_HEADER 0x55
-#define CODE_FOOTER 0x0d
-
 static size_t max = 0;
 static struct timespec timeout;
 
@@ -99,7 +96,7 @@ recv_data(const int fd, unsigned char *rbuf, const size_t size)
             rbuf[sizeof(rbuf) - 1] == CODE_FOOTER) {
             dbglog("checksum");
             // チェックサム
-            if (!checksum(rbuf, sizeof(rbuf)))
+            if (!checksum(rbuf, sizeof(rbuf) - SIZE_FOOTER))
                 break;
             outlog("checksum error");
             return EXIT_FAILURE;

@@ -27,6 +27,12 @@
 
 #include <stdbool.h>    /* bool */
 
+#define CODE_HEADER 0x55
+#define CODE_FOOTER 0xff
+#define SIZE_HEADER sizeof(CODE_HEADER)
+#define SIZE_FOOTER sizeof(CODE_FOOTER)
+#define SIZE_RECV 0xff
+
 int send_data(const int fd, const unsigned char *buf, const size_t size);
 int recv_data(const int fd, unsigned char *rbuf, const size_t size);
 void set_timeout(struct timespec *ts);

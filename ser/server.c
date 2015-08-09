@@ -36,9 +36,7 @@
 #include "option.h"
 #include "server.h"
 
-#define RECV_SIZE 0xff
-#define CODE_HEADER 0x55
-#define CODE_FOOTER 0xff
+#define SIZE_ADDITION 3
 
 /*** シグナル */
 volatile sig_atomic_t sig_handled = 0;
@@ -85,7 +83,7 @@ static const unsigned char send_buf3[] =
     0x50, 0x0d
 };
 
-static unsigned char recv_buf[RECV_SIZE];
+static unsigned char recv_buf[SIZE_RECV];
 
 /**
  * 受信送信ループ処理
@@ -98,13 +96,12 @@ recv_send_from_file(const int fd)
 {
     int result = EXIT_FAILURE;
     int retval = 0;
-    size_t rlen = 0;
+    size_t rlen = 0, pos = 0;
     size_t length = 0;
     struct stat st;
     static FILE *fp = NULL;
     unsigned char *sbuf = NULL;
     unsigned char *p = NULL;
-    unsigned char cksum = 0;
     int index = 0;
 
     dbglog("start");
@@ -135,32 +132,35 @@ recv_send_from_file(const int fd)
             if (!fp)
                 goto out;
 
-            sbuf = calloc(sizeof(unsigned char), length + 3);
-            if (!sbuf)
+            sbuf = calloc(sizeof(unsigned char), length + SIZE_ADDITION);
+            if (!sbuf) {
+                outlog("calloc error");
                 goto out;
+            }
             p = sbuf;
 
             /* ヘッダ設定 */
-            *p = (unsigned char)CODE_HEADER;
+            *(p++) = (unsigned char)CODE_HEADER;
+            pos = SIZE_HEADER;
 
             /* ファイル読み込み */
-            rlen = fread(++p, sizeof(unsigned char), length, fp);
+            rlen = fread(p, sizeof(unsigned char), length, fp);
             if (ferror(fp)) {
                 outlog("fread error: ferror=%d rlen=%zu length%zu",
                        ferror(fp), rlen, length);
                 goto out;
             }
-            p += rlen;
+            p += (rlen + 1);
+            pos += (rlen + 1);
 
             /* チェックサム */
-            cksum = add_checksum(sbuf, rlen + 2);
-            dbglog("checksum=0x%hhx", cksum);
+            *(p++) = checksum(sbuf, pos++);
 
             /* フッタ設定 */
-            *(++p) = (unsigned char)CODE_FOOTER;
+            *p = (unsigned char)CODE_FOOTER;
 
             /* 送信 */
-            (void)send_data(fd, sbuf, rlen + 3);
+            (void)send_data(fd, sbuf, pos);
 
             if (sbuf)
                 free(sbuf);
